@@ -19,6 +19,28 @@ sys.path.insert(0, '/home/issei/catkin_ws/src/mimi_common_pkg/scripts')
 # from common_function import *
 
 
+class DecideMove(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes = ['decide_finish'])
+        # Subscriber
+        self.posi_sub = rospy.Subscriber('/navigation/move_place', String, self.currentPosiCB)
+        # Value
+        # self.coord_list = searchLocationName('ggi', 'operator')
+        self.current_position = 'operator'
+
+    def currentPosiCB(self, data):
+        self.current_position = data.data
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state: DECIDE_MOVE')
+        if self.current_position != 'operator':
+            # navigationAC(self.coord_list)
+            speak('I arrived operator position')
+        else:
+            pass
+        return 'decide_finish'
+
+
 class ListenCommand(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -90,7 +112,7 @@ class Exit(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: EXIT')
-        # coord_list = searchLocationName('', 'exit')
+        # coord_list = searchLocationName('exit')
         # result = navigationAC(coord_list)
         result = True
         if result:
@@ -109,6 +131,11 @@ class GgiTestPhaseServer():
     def startSM(self, req):
         sm_top = smach.StateMachine(outcomes = ['finish_sm_top'])
         with sm_top:
+            smach.StateMachine.add(
+                    'DECIDE_MOVE',
+                    DecideMove(),
+                    transitions = {'decide_finish':'LISTEN_COMMAND'})
+
             smach.StateMachine.add(
                     'LISTEN_COMMAND',
                     ListenCommand(),

@@ -16,6 +16,7 @@ import smach_ros
 from std_msgs.msg import String
 from ggi.srv import ListenCommand, GgiLearning, YesNo
 from rcj_2020_ggi.srv import GgiTestPhase
+from mimi_common_pkg.srv import LocationSetup
 
 sys.path.insert(0, '/home/athome/catkin_ws/src/mimi_common_pkg/scripts/')
 from common_function import BaseCarrier, speak
@@ -85,6 +86,7 @@ class Event(smach.State):
         self.pub_follow_req = rospy.Publisher('/chase/request', String, queue_size = 1)
         # Survice
         self.ggi_learning_srv = rospy.ServiceProxy('/ggi_learning', GgiLearning)
+        self.location_setup_srv = rospy.ServiceProxy('/location_setup', LocationSetup)
         self.test_phase_srv = rospy.ServiceProxy('/ggi_test_phase', GgiTestPhase)
         self.yesno_srv = rospy.ServiceProxy('/yes_no', YesNo)
 
@@ -98,7 +100,21 @@ class Event(smach.State):
             self.pub_follow_req.publish('stop')
         elif userdata.cmd_input == 'start ggi training':
             speak('Start ggi learning')
-            #self.ggi_learning_srv()
+            result = self.ggi_learning_srv()
+            self.location_setup_srv(state = 'add', name = result.location_name)
+            speak('Location added')
+        elif userdata.cmd_input == 'save location':
+            self.file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
+            print self.file_name
+            speak('Name is ', self.file_name)
+            speak('Is this ok?')
+            result = self.yesno_srv()
+            if result.result:
+                self.location_setup_srv(state = 'save', name = self.file_name)
+                speak('Location saved')
+            else:
+                speak('Say the command again')
+
         elif userdata.cmd_input == 'start test phase':
             speak('Can i start the test phase?')
             result = self.yesno_srv()
@@ -109,7 +125,7 @@ class Event(smach.State):
                 speak('Finish test phase')
                 return 'finish_test_phase'
             else:
-                speak('OK, Continue the training phase')
+                speak('OK, Continue training')
         else:
             pass
         return 'finish_event'
