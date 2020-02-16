@@ -1,0 +1,9 @@
+{'turn right':'motion',
+ 'turn left':'motion',
+ 'go straight':'motion',
+ 'go back':'motion',
+ 'follow me':'event',
+ 'stop following':'event'
+ 'start ggi learning':'event',
+ 'start test phase':'event'
+ }
