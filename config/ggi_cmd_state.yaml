@@ -2,8 +2,9 @@
  'turn left':'motion',
  'go straight':'motion',
  'go back':'motion',
- 'follow me':'event',
- 'stop following':'event'
+ 'follow me':'motion',
+ 'stop following':'motion',
+ 'start go get it':'event',
  'start ggi learning':'event',
  'start test phase':'event'
  }

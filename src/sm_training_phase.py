@@ -20,6 +20,7 @@ from mimi_common_pkg.srv import LocationSetup
 
 sys.path.insert(0, '/home/athome/catkin_ws/src/mimi_common_pkg/scripts/')
 from common_function import BaseCarrier, speak
+from common_action_client import enterTheRoomAC
 
 
 class Listen(smach.State): 
@@ -56,7 +57,9 @@ class Motion(smach.State):
                 outcomes = ['finish_motion'],
                 input_keys = ['cmd_input'])
         self.bc = BaseCarrier()
-
+        # Publisher
+        self.pub_follow_req = rospy.Publisher('/chase/request', String, queue_size = 1)
+ 
     def execute(self, userdata):
         rospy.loginfo('Executing state: MOVE')
         if userdata.cmd_input == 'turn right':
@@ -71,6 +74,13 @@ class Motion(smach.State):
         elif userdata.cmd_input == 'go back':
             speak('Go back')
             self.bc.translateDist(-0.20)
+        elif userdata.cmd_input == 'follow me':
+            speak('I will follow you')
+            self.pub_follow_req.publish('start')
+        elif userdata.cmd_input == 'stop following':
+            speak('Stop following')
+            self.pub_follow_req.publish('stop')
+ 
         else:
             pass
         return 'finish_motion'
@@ -82,8 +92,6 @@ class Event(smach.State):
                 self,
                 outcomes = ['finish_event', 'finish_test_phase'],
                 input_keys = ['cmd_input'])
-        # Publisher
-        self.pub_follow_req = rospy.Publisher('/chase/request', String, queue_size = 1)
         # Survice
         self.ggi_learning_srv = rospy.ServiceProxy('/ggi_learning', GgiLearning)
         self.location_setup_srv = rospy.ServiceProxy('/location_setup', LocationSetup)
@@ -92,12 +100,10 @@ class Event(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: EVENT')
-        if userdata.cmd_input == 'follow me':
-            speak('I will follow you')
-            self.pub_follow_req.publish('start')
-        elif userdata.cmd_input == 'stop following':
-            speak('Stop following')
-            self.pub_follow_req.publish('stop')
+        if userdata.cmd_input == 'start go get it':
+            speak('Start go get it')
+            # enterTheRoomAC(80)
+            speak('I entered the room')
         elif userdata.cmd_input == 'start ggi training':
             speak('Start ggi learning')
             result = self.ggi_learning_srv()
