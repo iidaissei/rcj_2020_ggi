@@ -100,7 +100,8 @@ class Event(smach.State):
             self.pub_follow_req.publish('stop')
         elif userdata.cmd_input == 'start ggi training':
             speak('Start ggi learning')
-            result = self.ggi_learning_srv()
+            result = self.ggi_learning_srv().location_name
+            print result
             self.location_setup_srv(state = 'add', name = result.location_name)
             speak('Location added')
         elif userdata.cmd_input == 'save location':
