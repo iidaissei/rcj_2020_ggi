@@ -15,7 +15,7 @@ import smach
 import smach_ros
 from std_msgs.msg import String
 from ggi.srv import ListenCommand, GgiLearning, YesNo
-from rcj_2020_ggi.srv import GgiTestPhase
+# from rcj_2020_ggi.srv import GgiTestPhase
 from mimi_common_pkg.srv import LocationSetup
 
 sys.path.insert(0, '/home/athome/catkin_ws/src/mimi_common_pkg/scripts/')
@@ -34,7 +34,7 @@ class Listen(smach.State):
         # Service
         self.listen_cmd_srv = rospy.ServiceProxy('/listen_command', ListenCommand)
         # Value
-        self.cmd_dict = rosparam.get_param('/ggi/voice_cmd')
+        self.cmd_dict = rosparam.get_param('/ggi/cmd_state')
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: LISTEN')
@@ -42,7 +42,6 @@ class Listen(smach.State):
         if result.result:
             command = result.cmd
             userdata.cmd_output = command
-            userdata.words_output = self.words_dict[command]
             state = self.cmd_dict[command]
             return state
         else:
@@ -95,25 +94,27 @@ class Event(smach.State):
         # Survice
         self.ggi_learning_srv = rospy.ServiceProxy('/ggi_learning', GgiLearning)
         self.location_setup_srv = rospy.ServiceProxy('/location_setup', LocationSetup)
-        self.test_phase_srv = rospy.ServiceProxy('/ggi_test_phase', GgiTestPhase)
+        self.listen_cmd_srv = rospy.ServiceProxy('/listen_command', ListenCommand)
+        # self.test_phase_srv = rospy.ServiceProxy('/ggi_test_phase', GgiTestPhase)
         self.yesno_srv = rospy.ServiceProxy('/yes_no', YesNo)
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: EVENT')
         if userdata.cmd_input == 'start go get it':
             speak('Start go get it')
-            # enterTheRoomAC(80)
+            enterTheRoomAC(0.8)
             speak('I entered the room')
-        elif userdata.cmd_input == 'start ggi training':
+        elif userdata.cmd_input == 'start ggi learning':
             speak('Start ggi learning')
             result = self.ggi_learning_srv().location_name
             print result
             self.location_setup_srv(state = 'add', name = result.location_name)
             speak('Location added')
         elif userdata.cmd_input == 'save location':
+            speak('Please tell me file name')
             self.file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
             print self.file_name
-            speak('Name is ', self.file_name)
+            speak(self.file_name)
             speak('Is this ok?')
             result = self.yesno_srv()
             if result.result:
@@ -127,7 +128,7 @@ class Event(smach.State):
             result = self.yesno_srv()
             if result.result:
                 speak('Start the test phase')
-                result = self.test_phase_srv().result
+                # result = self.test_phase_srv().result
                 print result
                 speak('Finish test phase')
                 return 'finish_test_phase'
