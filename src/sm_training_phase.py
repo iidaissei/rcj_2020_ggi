@@ -14,9 +14,9 @@ import rosparam
 import smach
 import smach_ros
 from std_msgs.msg import String
-from ggi.srv import ListenCommand, GgiLearning, YesNo
-# from rcj_2020_ggi.srv import GgiTestPhase
+from rcj_2020_ggi.srv import GgiTestPhase
 from mimi_common_pkg.srv import LocationSetup
+from ggi.srv import ListenCommand, GgiLearning, YesNo
 
 sys.path.insert(0, '/home/athome/catkin_ws/src/mimi_common_pkg/scripts/')
 from common_function import BaseCarrier, speak
@@ -34,7 +34,7 @@ class Listen(smach.State):
         # Service
         self.listen_cmd_srv = rospy.ServiceProxy('/listen_command', ListenCommand)
         # Value
-        self.cmd_dict = rosparam.get_param('/ggi/cmd_state')
+        self.cmd_state = rosparam.get_param('/ggi/cmd_state')
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: LISTEN')
@@ -42,7 +42,7 @@ class Listen(smach.State):
         if result.result:
             command = result.cmd
             userdata.cmd_output = command
-            state = self.cmd_dict[command]
+            state = self.cmd_state[command]
             return state
         else:
             speak("I could't hear")
@@ -79,7 +79,6 @@ class Motion(smach.State):
         elif userdata.cmd_input == 'stop following':
             speak('Stop following')
             self.pub_follow_req.publish('stop')
- 
         else:
             pass
         return 'finish_motion'
@@ -107,13 +106,11 @@ class Event(smach.State):
         elif userdata.cmd_input == 'start ggi learning':
             speak('Start ggi learning')
             result = self.ggi_learning_srv().location_name
-            print result
             self.location_setup_srv(state = 'add', name = result.location_name)
             speak('Location added')
         elif userdata.cmd_input == 'save location':
-            speak('Please tell me file name')
+            speak('Please tell me the file name')
             self.file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
-            print self.file_name
             speak(self.file_name)
             speak('Is this ok?')
             result = self.yesno_srv()
@@ -122,7 +119,6 @@ class Event(smach.State):
                 speak('Location saved')
             else:
                 speak('Say the command again')
-
         elif userdata.cmd_input == 'start test phase':
             speak('Can i start the test phase?')
             result = self.yesno_srv()

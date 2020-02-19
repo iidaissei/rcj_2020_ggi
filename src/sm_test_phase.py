@@ -25,7 +25,7 @@ class DecideMove(smach.State):
         # Subscriber
         self.posi_sub = rospy.Subscriber('/navigation/move_place', String, self.currentPosiCB)
         # Value
-        # self.coord_list = searchLocationName('ggi', 'operator')
+        # self.operator_coord = searchLocationName('ggi', 'operator')
         self.current_position = 'operator'
 
     def currentPosiCB(self, data):
@@ -34,7 +34,7 @@ class DecideMove(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state: DECIDE_MOVE')
         if self.current_position != 'operator':
-            # navigationAC(self.coord_list)
+            # navigationAC(self.operator_coord)
             speak('I arrived operator position')
         else:
             pass
