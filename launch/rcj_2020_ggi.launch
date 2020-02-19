@@ -1,11 +1,5 @@
 <launch>
-    <machine name="tegra-ubuntu" address="tegra-ubuntu" env-loader="/home/nvidia/catkin_ws/devel/env.sh" user="nvidia" password="nvidia"/>
-    <node machine="tegra-ubuntu" pkg="chaser" name="chaser" type="chaser" />
-
-
     <rosparam file="$(find mimi_common_pkg)/config/demo.yaml" command="load" ns="/location_dict" />
     <rosparam file="$(find rcj_2020_ggi)/config/ggi_cmd_state.yaml" command="load" ns="/ggi/cmd_state" />
-
-    <!-- node pkg="rcj_2020_ggi" name="sm_training_phase" type="sm_training_phase.py" / -->
-    <!-- node pkg="rcj_2020_ggi" name="sm_test_phase" type="sm_test_phase.py" / -->
+    <node pkg="rcj_2020_ggi" name="sm_training_phase" type="sm_training_phase.py" />
 </launch>
