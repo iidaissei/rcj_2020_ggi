@@ -1,5 +1,8 @@
 {'turn right':'motion',
  'turn left':'motion',
+ 'right face':'motion',
+ 'left face':'motion',
+ 'about face':'motion',
  'go straight':'motion',
  'go back':'motion',
  'follow me':'motion',

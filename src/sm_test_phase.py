@@ -13,10 +13,11 @@ import sys
 import rospy
 import smach
 import smach_ros
+from rcj_2020_ggi.srv import GgiTestPhase, GgiTestPhaseResponse
 
-sys.path.insert(0, '/home/issei/catkin_ws/src/mimi_common_pkg/scripts')
-# from common_action_client import *
-# from common_function import *
+sys.path.insert(0, '/home/athome/catkin_ws/src/mimi_common_pkg/scripts')
+from common_action_client import *
+from common_function import *
 
 
 class DecideMove(smach.State):
@@ -25,7 +26,7 @@ class DecideMove(smach.State):
         # Subscriber
         self.posi_sub = rospy.Subscriber('/navigation/move_place', String, self.currentPosiCB)
         # Value
-        # self.operator_coord = searchLocationName('ggi', 'operator')
+        self.operator_coord = searchLocationName('operator')
         self.current_position = 'operator'
 
     def currentPosiCB(self, data):
@@ -34,7 +35,7 @@ class DecideMove(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state: DECIDE_MOVE')
         if self.current_position != 'operator':
-            # navigationAC(self.operator_coord)
+            navigationAC(self.operator_coord)
             speak('I arrived operator position')
         else:
             pass
@@ -50,7 +51,7 @@ class ListenCommand(smach.State):
                                          'all_cmd_finish'],
                              output_keys = ['cmd_out'])
         # ServiceProxy
-        self.listen_srv = rospy.ServiceProxy('/gpsr/actionplan', ActionPlan)
+        # self.listen_srv = rospy.ServiceProxy('/gpsr/actionplan', ActionPlan)
         # Value
         self.listen_count = 1
         self.cmd_count = 1
@@ -64,8 +65,10 @@ class ListenCommand(smach.State):
             speak('CommandNumber is ' + str(self.cmd_count))
             speak('ListenCount is ' + str(self.listen_count))
             speak('Please instruct me')
-            result = self.listen_srv()
-            if result.result:
+            # result = self.listen_srv()
+            result = True
+            if result:
+            # if result.result:
                 self.listen_count = 1
                 self.cmd_count += 1
                 userdata.cmd_out = result
@@ -90,14 +93,13 @@ class ExeAction(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: EXE_ACTION')
-        action = userdata.cmd_in.action
-        data = userdata.cmd_in.data
-        print data
-        print action
-        # result = exeActionPlan(action, data)
-        result = True
-        # if result.result:
+        # action = userdata.cmd_in.action
+        # data = userdata.cmd_in.data
+        action = ['go','go','go']
+        data = ['table','shelf','chair']
+        result = exeActionPlanAC(action, data)
         if result:
+        # if result:
             speak('Action success')
             return 'action_success'
         else:
@@ -108,25 +110,24 @@ class ExeAction(smach.State):
 class Exit(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes = ['finish_exit'])
+                             outcomes = ['exit_finish'])
 
     def execute(self, userdata):
         rospy.loginfo('Executing state: EXIT')
-        # coord_list = searchLocationName('exit')
-        # result = navigationAC(coord_list)
-        result = True
+        coord_list = searchLocationName('exit')
+        result = navigationAC(coord_list)
+        # result = True
         if result:
-            return 'finish_exit'
+            return 'exit_finish'
         else:
             # speak('I can not mave exit')
             print 'exit'
-            return 'finish_exit'
+            return 'exit_finish'
 
 
 class GgiTestPhaseServer():
     def __init__(self):
         self.server = rospy.Service('/ggi/testphase', GgiTestPhase, self.startSM)
-
 
     def startSM(self, req):
         sm_top = smach.StateMachine(outcomes = ['finish_sm_top'])

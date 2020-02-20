@@ -62,23 +62,25 @@ class Motion(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state: MOVE')
         if userdata.cmd_input == 'turn right':
-            speak('Rotate right')
             self.bc.angleRotation(-45)
         elif userdata.cmd_input == 'turn left':
-            speak('Rotate left')
             self.bc.angleRotation(45)
         elif userdata.cmd_input == 'go straight':
-            speak('Go forward')
             self.bc.translateDist(0.20)
         elif userdata.cmd_input == 'go back':
-            speak('Go back')
             self.bc.translateDist(-0.20)
         elif userdata.cmd_input == 'follow me':
-            speak('I will follow you')
+            speak('Start follow')
             self.pub_follow_req.publish('start')
         elif userdata.cmd_input == 'stop following':
-            speak('Stop following')
+            speak('Stop follow')
             self.pub_follow_req.publish('stop')
+        elif userdata.cmd_input == 'right face':
+            self.bc.angleRotation(-90)
+        elif userdata.cmd_input == 'left face':
+            self.bc.angleRotation(90)
+        elif userdata.cmd_input == 'about face':
+            self.bc.angleRotation(-180)
         else:
             pass
         return 'finish_motion'
@@ -94,7 +96,7 @@ class Event(smach.State):
         self.ggi_learning_srv = rospy.ServiceProxy('/ggi_learning', GgiLearning)
         self.location_setup_srv = rospy.ServiceProxy('/location_setup', LocationSetup)
         self.listen_cmd_srv = rospy.ServiceProxy('/listen_command', ListenCommand)
-        # self.test_phase_srv = rospy.ServiceProxy('/ggi_test_phase', GgiTestPhase)
+        self.test_phase_srv = rospy.ServiceProxy('/ggi/testphase', GgiTestPhase)
         self.yesno_srv = rospy.ServiceProxy('/yes_no', YesNo)
 
     def execute(self, userdata):
@@ -102,34 +104,35 @@ class Event(smach.State):
         if userdata.cmd_input == 'start go get it':
             speak('Start go get it')
             enterTheRoomAC(0.8)
-            speak('I entered the room')
         elif userdata.cmd_input == 'start ggi learning':
-            speak('Start ggi learning')
             result = self.ggi_learning_srv().location_name
-            self.location_setup_srv(state = 'add', name = result.location_name)
+            print result
+            self.location_setup_srv(state = 'add', name = result)
             speak('Location added')
         elif userdata.cmd_input == 'save location':
-            speak('Please tell me the file name')
-            self.file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
-            speak(self.file_name)
+            self.location_setup_srv(state = 'add', name = 'operator')
+            speak('Operator position added')
+            speak('Tell me the file name')
+            file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
+            speak(file_name)
             speak('Is this ok?')
             result = self.yesno_srv()
             if result.result:
-                self.location_setup_srv(state = 'save', name = self.file_name)
+                self.location_setup_srv(state = 'save', name = file_name)
                 speak('Location saved')
             else:
                 speak('Say the command again')
         elif userdata.cmd_input == 'start test phase':
-            speak('Can i start the test phase?')
+            speak('Can i start?')
             result = self.yesno_srv()
             if result.result:
                 speak('Start the test phase')
-                # result = self.test_phase_srv().result
+                result = self.test_phase_srv().result
                 print result
                 speak('Finish test phase')
                 return 'finish_test_phase'
             else:
-                speak('OK, Continue training')
+                speak('Continue training')
         else:
             pass
         return 'finish_event'
