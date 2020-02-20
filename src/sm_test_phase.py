@@ -36,7 +36,7 @@ class DecideMove(smach.State):
         rospy.loginfo('Executing state: DECIDE_MOVE')
         if self.current_position != 'operator':
             navigationAC(self.operator_coord)
-            speak('I arrived operator position')
+            speak('I arrived operator')
         else:
             pass
         return 'decide_finish'
@@ -95,34 +95,15 @@ class ExeAction(smach.State):
         rospy.loginfo('Executing state: EXE_ACTION')
         # action = userdata.cmd_in.action
         # data = userdata.cmd_in.data
-        action = ['go','go','go']
-        data = ['table','shelf','chair']
+        action = ['go']
+        data = ['table']
         result = exeActionPlanAC(action, data)
         if result:
-        # if result:
             speak('Action success')
             return 'action_success'
         else:
             speak('Action failed')
             return 'action_failure'
-
-
-class Exit(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes = ['exit_finish'])
-
-    def execute(self, userdata):
-        rospy.loginfo('Executing state: EXIT')
-        coord_list = searchLocationName('exit')
-        result = navigationAC(coord_list)
-        # result = True
-        if result:
-            return 'exit_finish'
-        else:
-            # speak('I can not mave exit')
-            print 'exit'
-            return 'exit_finish'
 
 
 class GgiTestPhaseServer():
@@ -143,7 +124,7 @@ class GgiTestPhaseServer():
                     transitions = {'listen_success':'EXE_ACTION',
                                    'listen_failure':'LISTEN_COMMAND',
                                    'next_cmd':'DECIDE_MOVE',
-                                   'all_cmd_finish':'EXIT'},
+                                   'all_cmd_finish':'finish_sm_top'},
                     remapping = {'cmd_out':'cmd'})
 
             smach.StateMachine.add(
@@ -152,11 +133,6 @@ class GgiTestPhaseServer():
                     transitions = {'action_success':'DECIDE_MOVE',
                                    'action_failure':'DECIDE_MOVE'},
                     remapping = {'cmd_in':'cmd'})
-
-            smach.StateMachine.add(
-                    'EXIT',
-                    Exit(),
-                    transitions = {'exit_finish':'finish_sm_top'})
 
         outcomes = sm_top.execute()
 

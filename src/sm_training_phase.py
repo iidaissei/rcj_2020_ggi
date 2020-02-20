@@ -69,18 +69,18 @@ class Motion(smach.State):
             self.bc.translateDist(0.20)
         elif userdata.cmd_input == 'go back':
             self.bc.translateDist(-0.20)
-        elif userdata.cmd_input == 'follow me':
-            speak('Start follow')
-            self.pub_follow_req.publish('start')
-        elif userdata.cmd_input == 'stop following':
-            speak('Stop follow')
-            self.pub_follow_req.publish('stop')
         elif userdata.cmd_input == 'right face':
             self.bc.angleRotation(-90)
         elif userdata.cmd_input == 'left face':
             self.bc.angleRotation(90)
         elif userdata.cmd_input == 'about face':
             self.bc.angleRotation(-180)
+        elif userdata.cmd_input == 'follow me':
+            speak('Start follow')
+            self.pub_follow_req.publish('start')
+        elif userdata.cmd_input == 'stop following':
+            speak('Stop follow')
+            self.pub_follow_req.publish('stop')
         else:
             pass
         return 'finish_motion'
@@ -95,7 +95,6 @@ class Event(smach.State):
         # Survice
         self.ggi_learning_srv = rospy.ServiceProxy('/ggi_learning', GgiLearning)
         self.location_setup_srv = rospy.ServiceProxy('/location_setup', LocationSetup)
-        self.listen_cmd_srv = rospy.ServiceProxy('/listen_command', ListenCommand)
         self.test_phase_srv = rospy.ServiceProxy('/ggi/testphase', GgiTestPhase)
         self.yesno_srv = rospy.ServiceProxy('/yes_no', YesNo)
 
@@ -110,29 +109,24 @@ class Event(smach.State):
             self.location_setup_srv(state = 'add', name = result)
             speak('Location added')
         elif userdata.cmd_input == 'save location':
-            self.location_setup_srv(state = 'add', name = 'operator')
-            speak('Operator position added')
-            speak('Tell me the file name')
-            file_name = self.listen_cmd_srv(file_name = 'map_name').cmd
-            speak(file_name)
-            speak('Is this ok?')
+            speak('Can i save?')
             result = self.yesno_srv()
             if result.result:
-                self.location_setup_srv(state = 'save', name = file_name)
+                self.location_setup_srv(state = 'add', name = 'operator')
+                self.location_setup_srv(state = 'save', name = 'ggi')
                 speak('Location saved')
             else:
-                speak('Say the command again')
+                speak('OK')
         elif userdata.cmd_input == 'start test phase':
             speak('Can i start?')
             result = self.yesno_srv()
             if result.result:
                 speak('Start the test phase')
                 result = self.test_phase_srv().result
-                print result
                 speak('Finish test phase')
                 return 'finish_test_phase'
             else:
-                speak('Continue training')
+                speak('OK')
         else:
             pass
         return 'finish_event'
